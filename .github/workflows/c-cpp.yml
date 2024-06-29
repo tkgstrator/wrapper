@@ -28,5 +28,5 @@ jobs:
       shell: pwsh
       
     - name: make
-      run: make4
+      run: make
       shell: pwsh

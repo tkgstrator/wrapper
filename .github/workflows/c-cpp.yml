@@ -27,6 +27,9 @@ jobs:
         .\prebuilt\windows-x86_64\bin\python.exe .\build\tools\make_standalone_toolchain.py --arch x86_64 --install-dir standalone
       shell: pwsh
       
-    - name: make
-      run: make
+    - name: Build
+      run: |
+        android-ndk-r23b/standalone/bin/clang++ -Wall -Werror -nostdlib -c -O3 -o handle.o main.cpp
+        android-ndk-r23b/standalone/bin/clang -DMyRelease -Wall -Werror -L ./rootfs/system/lib64 -landroidappmusic -lstoreservicescore -lmediaplatform -lc++_shared -O3 -Wall -o rootfs/system/bin/main handle.o test.c
+        android-ndk-r23b/standalone/bin/clang -O3 -Wall -o wrapper wrapper.c
       shell: pwsh

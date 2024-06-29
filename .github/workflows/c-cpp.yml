@@ -33,3 +33,12 @@ jobs:
         android-ndk-r23b/standalone/bin/clang -DMyRelease -Wall -Werror -L ./rootfs/system/lib64 -landroidappmusic -lstoreservicescore -lmediaplatform -lc++_shared -O3 -Wall -o rootfs/system/bin/main handle.o test.c
         android-ndk-r23b/standalone/bin/clang -O3 -Wall -o wrapper wrapper.c
       shell: pwsh
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Wrapper.x86_64
+        path: |
+          rootfs
+          handle.o
+          wrapper

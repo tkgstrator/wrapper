@@ -22,8 +22,8 @@ jobs:
     - name: Set up Android NDK r23b
       run: | 
         aria2c -o ~\android-ndk-r23b-windows.zip https://dl.google.com/android/repository/android-ndk-r23b-windows.zip
-        Expand-Archive ~\android-ndk-r23b-windows.zip -DestinationPath ~
-        cd ~\android-ndk-r23b-windows
+        Expand-Archive android-ndk-r23b-windows.zip -DestinationPath ~
+        cd android-ndk-r23b-windows
         .\prebuilt\windows-x86_64\bin\python.exe .\build\tools\make_standalone_toolchain.py --arch x86_64 --install-dir standalone
       shell: pwsh
       

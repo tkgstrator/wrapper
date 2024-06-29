@@ -17,7 +17,7 @@ jobs:
     - name: Install aria2 and unzip
       uses: crazy-max/ghaction-chocolatey@v3
       with:
-        args: install aria2 devbox-unzip -y
+        args: install aria2 unzip -y
     
     - name: Set up Android NDK r23b
       run: | 

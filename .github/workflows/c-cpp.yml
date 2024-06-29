@@ -14,15 +14,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Aria2
+    - name: Install aria2 and unzip
       uses: crazy-max/ghaction-chocolatey@v3
       with:
-        args: install aria2 -y
+        args: install aria2 devbox-unzip -y
     
     - name: Set up Android NDK r23b
       run: | 
         aria2c -o ~\android-ndk-r23b-windows.zip https://dl.google.com/android/repository/android-ndk-r23b-windows.zip
-        Expand-Archive android-ndk-r23b-windows.zip -DestinationPath ~
+        unzip android-ndk-r23b-windows.zip
         cd android-ndk-r23b-windows
         .\prebuilt\windows-x86_64\bin\python.exe .\build\tools\make_standalone_toolchain.py --arch x86_64 --install-dir standalone
       shell: pwsh

@@ -423,6 +423,24 @@ inline static int new_socket() {
     }
 }
 
+const char* get_m3u8_method_play(uint8_t leaseMgr[16], unsigned long adam) {
+    union std_string HLS = new_std_string_short_mode("HLS");
+    struct std_vector HLSParam = new_std_vector(&HLS);
+    static uint8_t z0 = 1;
+    struct shared_ptr *ptr_result = (struct shared_ptr *) malloc(32);
+    _ZN22SVPlaybackLeaseManager12requestAssetERKmRKNSt6__ndk16vectorINS2_12basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEENS7_IS9_EEEERKb(
+        ptr_result, leaseMgr, &adam, &HLSParam, &z0
+    );
+    if (_ZNK23SVPlaybackAssetResponse13hasValidAssetEv(ptr_result->obj)) {
+        struct shared_ptr *playbackAsset = _ZNK23SVPlaybackAssetResponse13playbackAssetEv(ptr_result->obj);
+        union std_string *m3u8 = (union std_string *) malloc(24);
+        _ZNK17storeservicescore13PlaybackAsset9URLStringEv(m3u8, playbackAsset->obj);
+        return std_string_data(m3u8);
+    } else {
+        return NULL;
+    }
+}
+
 int main(int argc, char *argv[]) {
     selfPath = argv[0];
     if (argc != 2) {

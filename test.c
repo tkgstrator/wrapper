@@ -377,7 +377,7 @@ inline static int new_socket() {
     setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
 
     static struct sockaddr_in serv_addr = {.sin_family = AF_INET};
-    serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(port);
     if (bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
         perror("bind");
@@ -389,8 +389,8 @@ inline static int new_socket() {
         return EXIT_FAILURE;
     }
 
-    fprintf(stderr, "[!] listening 127.0.0.1:%d\n", port);
-    close(STDOUT_FILENO);
+    fprintf(stderr, "[!] listening 0.0.0.0:%d\n", port);
+    // close(STDOUT_FILENO);
 
     static struct sockaddr_in peer_addr;
     static socklen_t peer_addr_size = sizeof(peer_addr);
@@ -480,7 +480,7 @@ static inline void *new_socket_m3u8(void *args) {
     setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
 
     static struct sockaddr_in serv_addr = {.sin_family = AF_INET};
-    serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(20020);
     if (bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
         perror("bind");
@@ -490,8 +490,8 @@ static inline void *new_socket_m3u8(void *args) {
         perror("listen");
     }
 
-    fprintf(stderr, "[!] listening m3u8 request on 127.0.0.1:%d\n", 20020);
-    close(STDOUT_FILENO);
+    fprintf(stderr, "[!] listening m3u8 request on 0.0.0.0:%d\n", 20020);
+    // close(STDOUT_FILENO);
 
     static struct sockaddr_in peer_addr;
     static socklen_t peer_addr_size = sizeof(peer_addr);
@@ -505,6 +505,7 @@ static inline void *new_socket_m3u8(void *args) {
                 errno == ENETUNREACH)
                 continue;
             perror("accept4");
+            
         }
 
         handle_m3u8(connfd);

@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -423,6 +424,7 @@ inline static int new_socket() {
     }
 }
 
+
 const char* get_m3u8_method_play(uint8_t leaseMgr[16], unsigned long adam) {
     union std_string HLS = new_std_string_short_mode("HLS");
     struct std_vector HLSParam = new_std_vector(&HLS);
@@ -438,6 +440,76 @@ const char* get_m3u8_method_play(uint8_t leaseMgr[16], unsigned long adam) {
         return std_string_data(m3u8);
     } else {
         return NULL;
+    }
+}
+
+void handle_m3u8(const int connfd) {
+    while (1)
+    {
+        uint8_t adamSize;
+        if (!readfull(connfd, &adamSize, sizeof(uint8_t))) {
+            return;
+        }
+        if (adamSize <= 0) {
+            return;
+        }
+        char adam[adamSize];
+        for (int i=0; i<adamSize; i=i+1) {
+            readfull(connfd, &adam[i], sizeof(uint8_t));
+        }
+        char *ptr;
+        unsigned long adamID = strtoul(adam, &ptr, adamSize);
+        const char *m3u8 = get_m3u8_method_play(leaseMgr, adamID);
+        if (m3u8 == NULL) {
+            writefull(connfd, NULL, sizeof(NULL));
+        } else {
+            strcat((char *)m3u8, "\n");
+            writefull(connfd, (void *)m3u8, strlen(m3u8));
+        }
+    }
+}
+
+static inline void *new_socket_m3u8(void *args) {
+    const int fd = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
+    if (fd == -1) {
+        perror("socket");
+    }
+    const int optval = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval));
+
+    static struct sockaddr_in serv_addr = {.sin_family = AF_INET};
+    serv_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    serv_addr.sin_port = htons(20020);
+    if (bind(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
+        perror("bind");
+    }
+
+    if (listen(fd, 5) == -1) {
+        perror("listen");
+    }
+
+    fprintf(stderr, "[!] listening m3u8 request on 127.0.0.1:%d\n", 20020);
+    close(STDOUT_FILENO);
+
+    static struct sockaddr_in peer_addr;
+    static socklen_t peer_addr_size = sizeof(peer_addr);
+    while (1) {
+        const int connfd = accept4(fd, (struct sockaddr *)&peer_addr,
+                                   &peer_addr_size, SOCK_CLOEXEC);
+        if (connfd == -1) {
+            if (errno == ENETDOWN || errno == EPROTO || errno == ENOPROTOOPT ||
+                errno == EHOSTDOWN || errno == ENONET ||
+                errno == EHOSTUNREACH || errno == EOPNOTSUPP ||
+                errno == ENETUNREACH)
+                continue;
+            perror("accept4");
+        }
+
+        handle_m3u8(connfd);
+
+        if (close(connfd) == -1) {
+            perror("close");
+        }
     }
 }
 
@@ -470,5 +542,7 @@ int main(int argc, char *argv[]) {
     _ZN22SVPlaybackLeaseManager12requestLeaseERKb(leaseMgr, &autom);
     FHinstance = _ZN21SVFootHillSessionCtrl8instanceEv();
 
+    pthread_t m3u8_thread;
+    pthread_create(&m3u8_thread, NULL, &new_socket_m3u8, NULL);
     return new_socket();
 }

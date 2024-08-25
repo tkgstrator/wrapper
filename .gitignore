@@ -87,3 +87,5 @@ dkms.conf
 
 rootfs/
 .vscode/
+wrapper
+rootfs/system/bin/linker64

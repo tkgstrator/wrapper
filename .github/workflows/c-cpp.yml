@@ -27,9 +27,7 @@ jobs:
       
     - name: Build
       run: |
-        android-ndk-r23b/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android22-clang++ -Wall -Werror -nostdlib -c -O3 -o handle.o main.cpp
-        android-ndk-r23b/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android22-clang -DMyRelease -Wall -Werror -L ./rootfs/system/lib64 -landroidappmusic -lstoreservicescore -lmediaplatform -lc++_shared -O3 -Wall -o rootfs/system/bin/main handle.o test.c
-        clang -O3 -Wall -o wrapper wrapper.c
+        make
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4

@@ -29,10 +29,17 @@ jobs:
       run: |
         make
 
+    - name: Set outputs
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Test
+      run: ls rootfs
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Wrapper.x86_64
+        name: Wrapper.x86_64.${{ steps.vars.outputs.sha_short }}
         path: |
           rootfs
           wrapper

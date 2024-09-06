@@ -33,9 +33,6 @@ jobs:
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Test
-      run: ls rootfs
-
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:

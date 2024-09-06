@@ -544,7 +544,11 @@ int main(int argc, char *argv[]) {
     _ZN22SVPlaybackLeaseManager12requestLeaseERKb(leaseMgr, &autom);
     FHinstance = _ZN21SVFootHillSessionCtrl8instanceEv();
 
-    pthread_t m3u8_thread;
-    pthread_create(&m3u8_thread, NULL, &new_socket_m3u8, NULL);
+    if (args_info.m3u8_port_given) {
+        pthread_t m3u8_thread;
+        pthread_create(&m3u8_thread, NULL, &new_socket_m3u8, NULL);
+    } else {
+        fprintf(stderr, "[!] The feature of getting m3u8 is defaultly disabled because it's unstable now. To enable it, please manually specify m3u8-port param.\n");
+    }
     return new_socket();
 }

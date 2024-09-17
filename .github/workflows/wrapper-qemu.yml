@@ -28,10 +28,10 @@ jobs:
          with:
             github_token: ${{secrets.ACTION_TOKEN}}
             run_id: ${{ github.event.workflow_run.id }}
-            path: wrapper
       
-       - name: Unzip to image
+       - name: C to image
          run: |
+           mv Wrapper.x86_64.* wrapper
            sudo mv wrapper /mnt/wrapper/root/wrapper
            sudo chmod +x /mnt/wrapper/root/wrapper/wrapper
            

@@ -17,10 +17,10 @@ jobs:
 
        - name: Mount image
          run: |
-           modprobe nbd max_part=8
-           qemu-nbd --connect=/dev/nbd0 wrapper.qcow2
-           mkdir /mnt/wrapper
-           mount /dev/nbd0p3 /mnt/wrapper/
+           sudo modprobe nbd max_part=8
+           sudo qemu-nbd --connect=/dev/nbd0 wrapper.qcow2
+           sudo mkdir /mnt/wrapper
+           sudo mount /dev/nbd0p3 /mnt/wrapper/
 
        - name: Download latest artifact
          uses: actions/github-script@v6
@@ -45,14 +45,14 @@ jobs:
       
        - name: Unzip to image
          run: |
-           mkdir /mnt/wrapper/root/wrapper
-           unzip -d /mnt/wrapper/root/wrapper Wrapper.x86_64.*.zip
+           sudo mkdir /mnt/wrapper/root/wrapper
+           sudo unzip -d /mnt/wrapper/root/wrapper Wrapper.x86_64.*.zip
            
        - name: Unmount image
          run: |
-           umount /mnt/wrapper/
-           qemu-nbd --disconnect /dev/nbd0
-           rmmod nbd
+           sudo umount /mnt/wrapper/
+           sudo qemu-nbd --disconnect /dev/nbd0
+           sudo rmmod nbd
       
        - name: Upload artifact
          uses: actions/upload-artifact@v4

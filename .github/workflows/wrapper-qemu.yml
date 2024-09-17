@@ -1,0 +1,48 @@
+name: wrapper-qemu
+
+on:
+   workflow_run:
+     workflows: ["C/C++ CI"]
+     types: [completed]
+
+jobs:
+   on-success:
+     runs-on: ubuntu-latest
+     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+     steps:
+       - uses: actions/checkout@v4
+
+       - name: Download wrapper-qemu basic image
+         run: wget https://github.com/WorldObservationLog/wrapper/releases/download/wrapper-qemu/wrapper.qcow2
+
+       - name: Mount image
+         run: |
+           modprobe nbd max_part=8
+           qemu-nbd --connect=/dev/nbd0 wrapper.qcow2
+           mkdir /mnt/wrapper
+           mount /dev/nbd0p3 /mnt/wrapper/
+
+       - name: Download latest artifact
+         uses: actions/download-artifact@v4
+         with:
+           name: C/C++ CI
+           github-token: ${{ secrets.GH_PAT }}
+           repository: WorldObservationLog/wrapper
+           run-id: ${{ context.payload.workflow_run.id }}
+      
+       - name: Unzip to image
+         run: |
+           mkdir /mnt/wrapper/root/wrapper
+           unzip -d /mnt/wrapper/root/wrapper Wrapper.x86_64.*.zip
+           
+       - name: Unmount image
+         run: |
+           umount /mnt/wrapper/
+           qemu-nbd --disconnect /dev/nbd0
+           rmmod nbd
+      
+       - name: Upload artifact
+         uses: actions/upload-artifact@v4
+         with:
+           name: wrapper-qemu
+           path: wrapper.qcow2

@@ -13,7 +13,6 @@
 
 #include "import.h"
 #include "cmdline.h"
-#include "hexdump.c"
 #ifndef MyRelease
 #include "subhook/subhook.c"
 #endif

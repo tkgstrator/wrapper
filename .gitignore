@@ -94,3 +94,6 @@ build/
 # Enviroment Variables
 .env
 !.env.example
+
+# GitHub Copilot Instructions
+.github/copilot-instructions.md

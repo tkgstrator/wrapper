@@ -11,3 +11,5 @@ services:
     environment:
       USERNAME: ${USERNAME}
       PASSWORD: ${PASSWORD}
+    ports:
+      - 30020:30020

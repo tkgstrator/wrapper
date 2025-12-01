@@ -48,6 +48,9 @@ struct gengetopt_args_info
   int m3u8_port_arg;	/**< @brief  (default='20020').  */
   char * m3u8_port_orig;	/**< @brief  original value given at command line.  */
   const char *m3u8_port_help; /**< @brief  help description.  */
+  int account_port_arg;	/**< @brief  (default='30020').  */
+  char * account_port_orig;	/**< @brief  original value given at command line.  */
+  const char *account_port_help; /**< @brief  help description.  */
   char * proxy_arg;	/**< @brief  (default='').  */
   char * proxy_orig;	/**< @brief  original value given at command line.  */
   const char *proxy_help; /**< @brief  help description.  */
@@ -59,16 +62,21 @@ struct gengetopt_args_info
   char * base_dir_arg;	/**< @brief  (default='/data/data/com.apple.android.music/files').  */
   char * base_dir_orig;	/**< @brief  original value given at command line.  */
   const char *base_dir_help; /**< @brief  help description.  */
+  char * device_info_arg;	/**< @brief ClientIdentifier/VersionIdentifier/PlatformIdentifier/ProductVersion/DeviceModel/BuildVersion/LocaleIdentifier/LanguageIdentifier/AndroidID (default='Music/4.9/Android/10/Samsung S9/7663313/en-US/en-US/dc28071e981c439e').  */
+  char * device_info_orig;	/**< @brief ClientIdentifier/VersionIdentifier/PlatformIdentifier/ProductVersion/DeviceModel/BuildVersion/LocaleIdentifier/LanguageIdentifier/AndroidID original value given at command line.  */
+  const char *device_info_help; /**< @brief ClientIdentifier/VersionIdentifier/PlatformIdentifier/ProductVersion/DeviceModel/BuildVersion/LocaleIdentifier/LanguageIdentifier/AndroidID help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int decrypt_port_given ;	/**< @brief Whether decrypt-port was given.  */
   unsigned int m3u8_port_given ;	/**< @brief Whether m3u8-port was given.  */
+  unsigned int account_port_given ;	/**< @brief Whether account-port was given.  */
   unsigned int proxy_given ;	/**< @brief Whether proxy was given.  */
   unsigned int login_given ;	/**< @brief Whether login was given.  */
   unsigned int code_from_file_given ;	/**< @brief Whether code-from-file was given.  */
   unsigned int base_dir_given ;	/**< @brief Whether base-dir was given.  */
+  unsigned int device_info_given ;	/**< @brief Whether device-info was given.  */
 
 } ;
 

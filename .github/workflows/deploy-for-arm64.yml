@@ -40,8 +40,7 @@ jobs:
       - name: Set outputs
         id: vars
         run: |
-          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+          echo "version=$(grep -oP 'version "\K[^"]+' wrapper.ggo)" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -49,6 +48,8 @@ jobs:
           context: .
           platforms: linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.date }}-${{ steps.vars.outputs.sha_short }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

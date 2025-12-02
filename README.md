@@ -47,7 +47,7 @@ services:
     container_name: wrapper
     image: ghcr.io/WorldObservationLog/wrapper:latest
     volumes:
-      - rootfs/data:/app/rootfs/data
+      - rootfs:/app/rootfs
     environment:
       USERNAME: $USERNAME
       PASSWORD: $PASSWORD

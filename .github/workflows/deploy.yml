@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - arm64
-  pull_request:
-    branches:
-      - arm64
   workflow_dispatch:
 
 env:

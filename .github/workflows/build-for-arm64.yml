@@ -1,8 +1,6 @@
 name: Build for arm64
 
 on:
-  push:
-    branches: [ "arm64" ]
   pull_request:
     branches: [ "arm64" ]
 
@@ -10,7 +8,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    if: github.event.pull_request.draft == false
 
     steps:
     - name: Checkout repository
@@ -22,7 +20,7 @@ jobs:
     - name: Install LLVM
       run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 
-    - name: Install cross complier
+    - name: Install cross compiler
       run: sudo apt-get install gcc-aarch64-linux-gnu -y
 
     - name: Set up Android NDK r23b
@@ -36,32 +34,3 @@ jobs:
         cd build
         cmake ..
         make
-
-    - name: Set Tags
-      if: github.event_name == 'push'
-      id: vars
-      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-    - name: Upload Artifact
-      if: github.event_name == 'push'
-      uses: actions/upload-artifact@v4
-      with:
-        name: Wrapper.arm64.${{ steps.vars.outputs.sha_short }}
-        include-hidden-files: true
-        path: |
-          rootfs
-          wrapper
-          Dockerfile
-
-    - name: Create Release Zip File
-      if: github.event_name == 'push'
-      run: zip -r Wrapper.arm64.${{ steps.vars.outputs.sha_short }}.zip rootfs/ wrapper Dockerfile
-
-    - name: Create Release
-      if: github.event_name == 'push'
-      uses: softprops/action-gh-release@v2
-      with:
-        files: Wrapper.arm64.${{ steps.vars.outputs.sha_short }}.zip
-        body: ${{ github.event.head_commit.message }}
-        name: Wrapper.arm64.${{ steps.vars.outputs.sha_short }}
-        tag_name: Wrapper.arm64.latest

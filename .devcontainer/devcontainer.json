@@ -11,9 +11,6 @@
       "configureZshAsDefaultShell": true
     },
     "ghcr.io/devcontainers/features/github-cli:1": {},
-    "ghcr.io/devcontainers-extra/features/uv:1": {
-      "version": "latest"
-    },
     "ghcr.io/dhoeric/features/act:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": false
@@ -41,7 +38,7 @@
         "vsls-contrib.gitdoc"
       ],
       "settings": {
-        "debug.internalConsoleOptions": "openOnFirstSessionStart",
+        "debug.internalConsoleOptions": "openOnFirstSessionStart"
       }
     }
   }

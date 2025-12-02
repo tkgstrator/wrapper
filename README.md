@@ -45,7 +45,7 @@ PASSWORD=your-apple-id-password
 services:
   wrapper:
     container_name: wrapper
-    image: wrapper
+    image: ghcr.io/WorldObservationLog/wrapper:latest
     volumes:
       - rootfs/data:/app/rootfs/data
     environment:

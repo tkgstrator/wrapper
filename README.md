@@ -1,14 +1,19 @@
 # wrapper
+
 A tool to decrypt Apple Music. An active subscription is required.
 
 Only supports Linux x86_64 and arm64.
 
 # Installation
+
 Download the pre-built binary from this project's [Actions](https://github.com/WorldObservationLog/wrapper/actions).
 
 Alternatively, you can refer to the Actions configuration file for compilation instructions.
 
 # Docker
+
+> **Recommended**: Use [Docker Compose](#docker-compose-recommended) for easier setup and management.
+
 Available for x86_64 and arm64. You need to download the pre-built binary from Releases or Actions.
 
 Build image: `docker build --tag wrapper .`
@@ -119,7 +124,6 @@ cd build
 cmake ..
 make -j$(nproc)
 ```
-
 
 # Special Thanks
 - Anonymous, for providing the original version of this project and the legacy Frida decryption method.

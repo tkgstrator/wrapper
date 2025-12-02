@@ -1,24 +1,28 @@
-name: Build
+name: Release for arm64
 
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "arm64" ]
+    types: [ closed ]
 
 jobs:
-  build:
+  release:
 
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
     - name: Install aria2
-      run: sudo apt install aria2 -y
+      run: sudo apt-get install aria2 -y
 
     - name: Install LLVM
       run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+
+    - name: Install cross compiler
+      run: sudo apt-get install gcc-aarch64-linux-gnu -y
 
     - name: Set up Android NDK r23b
       run: |
@@ -32,28 +36,27 @@ jobs:
         cmake ..
         make
 
-    - name: Set outputs
+    - name: Set Tags
       id: vars
       run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-    - name: Upload artifact
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Wrapper.x86_64.${{ steps.vars.outputs.sha_short }}
+        name: Wrapper.arm64.${{ steps.vars.outputs.sha_short }}
         include-hidden-files: true
         path: |
           rootfs
           wrapper
+          Dockerfile
 
     - name: Create Release Zip File
-      run: zip -r Wrapper.x86_64.${{ steps.vars.outputs.sha_short }}.zip rootfs/ wrapper
+      run: zip -r Wrapper.arm64.${{ steps.vars.outputs.sha_short }}.zip rootfs/ wrapper Dockerfile
 
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        files: Wrapper.x86_64.${{ steps.vars.outputs.sha_short }}.zip
+        files: Wrapper.arm64.${{ steps.vars.outputs.sha_short }}.zip
         body: ${{ github.event.head_commit.message }}
-        prerelease: true
-        name: Wrapper.x86_64.${{ steps.vars.outputs.sha_short }}
-        tag_name: x86_64
-
+        name: Wrapper.arm64.${{ steps.vars.outputs.sha_short }}
+        tag_name: Wrapper.arm64.latest

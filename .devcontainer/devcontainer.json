@@ -1,0 +1,48 @@
+{
+  "name": "Wrapper",
+  "dockerComposeFile": "compose.yaml",
+  "service": "app",
+  "workspaceFolder": "/home/vscode/app",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "2.52.0"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "configureZshAsDefaultShell": true
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers-extra/features/uv:1": {
+      "version": "latest"
+    },
+    "ghcr.io/dhoeric/features/act:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": false
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "dockerDashComposeVersion": "v2",
+      "moby": false
+    }
+  },
+  "postAttachCommand": "/bin/zsh .devcontainer/postAttachCommand.sh",
+  "postCreateCommand": "/bin/zsh .devcontainer/postCreateCommand.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "EditorConfig.EditorConfig",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "PKief.material-icon-theme",
+        "antfu.file-nesting",
+        "editorconfig.editorconfig",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "openai.chatgpt",
+        "spmeesseman.vscode-taskexplorer",
+        "vsls-contrib.gitdoc"
+      ],
+      "settings": {
+        "debug.internalConsoleOptions": "openOnFirstSessionStart",
+      }
+    }
+  }
+}

@@ -18,7 +18,8 @@
   "postAttachCommand": "/bin/zsh .devcontainer/postAttachCommand.sh",
   "postCreateCommand": "/bin/zsh .devcontainer/postCreateCommand.sh",
   "containerEnv": {
-    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "ANDROID_NDK_ROOT": "/opt/android-ndk-r23b"
   },
   "mounts": [
     "source=${env:HOME}/.aws,target=/home/vscode/.aws,type=bind,consistency=cached,readonly",
@@ -52,7 +53,38 @@
       "settings": {
         "debug.internalConsoleOptions": "openOnFirstSessionStart",
         "editor.formatOnPaste": true,
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "files.exclude": {
+          "**/.cache": true,
+          "**/build": true,
+          "**/*.o": true,
+          "**/*.obj": true,
+          "subhook/build": true
+        },
+        "files.watcherExclude": {
+          "**/.cache/**": true,
+          "**/build/**": true,
+          "**/subhook/**": true,
+          "/opt/android-ndk-r23b/**": true
+        },
+        "search.exclude": {
+          "**/.cache/**": true,
+          "**/build/**": true,
+          "**/rootfs/system/**": true,
+          "**/subhook/**": true
+        },
+        "C_Cpp.default.compilerPath": "/opt/android-ndk-r23b/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android22-clang++",
+        "C_Cpp.default.intelliSenseMode": "linux-clang-arm64",
+        "C_Cpp.formatting": "clangFormat",
+        "C_Cpp.clang_format_fallbackStyle": "file",
+        "[c]": {
+          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        },
+        "[cpp]": {
+          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+        },
+        "cmake.buildDirectory": "${workspaceFolder}/build",
+        "cmake.configureOnOpen": true
       }
     }
   }

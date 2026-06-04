@@ -37,41 +37,23 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "Anthropic.claude-code",
         "EditorConfig.EditorConfig",
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
         "PKief.material-icon-theme",
         "antfu.file-nesting",
-        "charliermarsh.ruff",
         "eamodio.gitlens",
         "github.vscode-github-actions",
-        "ms-python.debugpy",
-        "ms-python.mypy-type-checker",
-        "ms-python.python",
-        "ms-python.vscode-pylance",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
         "tamasfe.even-better-toml",
+        "twxs.cmake",
         "vsls-contrib.gitdoc"
       ],
       "settings": {
-        "files.watcherExclude": {
-          "**/.venv/**": true
-        },
         "debug.internalConsoleOptions": "openOnFirstSessionStart",
         "editor.formatOnPaste": true,
-        "editor.formatOnSave": true,
-        "python.languageServer": "Pylance",
-        "python.analysis.completeFunctionParens": true,
-        "python.analysis.logLevel": "Warning",
-        "python.terminal.activateEnvInCurrentTerminal": true,
-        "python.testing.pytestEnabled": true,
-        "[python]": {
-          "editor.formatOnSave": true,
-          "editor.codeActionsOnSave": {
-            "source.fixAll.ruff": "explicit",
-            "source.organizeImports.ruff": "explicit"
-          }
-        }
+        "editor.formatOnSave": true
       }
     }
   }

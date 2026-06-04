@@ -1,44 +1,90 @@
 {
-  "name": "Wrapper",
+  "name": "Gamdl",
   "dockerComposeFile": "compose.yaml",
   "service": "app",
   "workspaceFolder": "/home/vscode/app",
   "features": {
-    "ghcr.io/devcontainers/features/git:1": {
-      "version": "2.52.0"
-    },
+    "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "configureZshAsDefaultShell": true
     },
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/dhoeric/features/act:1": {},
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "moby": false
+    "ghcr.io/devcontainers-extra/features/uv:1": {
+      "version": "latest"
     },
-    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
-      "dockerDashComposeVersion": "v2",
-      "moby": false
-    }
+    "ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {},
+    "ghcr.io/stu-bell/devcontainer-features/claude-code:0": {}
   },
   "postAttachCommand": "/bin/zsh .devcontainer/postAttachCommand.sh",
   "postCreateCommand": "/bin/zsh .devcontainer/postCreateCommand.sh",
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  },
+  "mounts": [
+    "source=${env:HOME}/.aws,target=/home/vscode/.aws,type=bind,consistency=cached,readonly",
+    "source=${env:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+    "source=${env:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached,readonly",
+    "source=${env:HOME}/.config/gh,target=/home/vscode/.config/gh,type=bind,consistency=cached"
+  ],
+  "remoteEnv": {
+    "ANTHROPIC_BASE_URL": "${localEnv:ANTHROPIC_BASE_URL}",
+    "ANTHROPIC_AUTH_TOKEN": "${localEnv:ANTHROPIC_AUTH_TOKEN}",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "UV_LINK_MODE": "copy",
+    "WAKATIME_API_KEY": "${localEnv:WAKATIME_API_KEY}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
+        "Anthropic.claude-code",
         "EditorConfig.EditorConfig",
         "GitHub.copilot",
         "GitHub.copilot-chat",
         "PKief.material-icon-theme",
         "antfu.file-nesting",
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
         "editorconfig.editorconfig",
-        "ms-vscode.cpptools",
-        "ms-vscode.cpptools-extension-pack",
-        "openai.chatgpt",
-        "spmeesseman.vscode-taskexplorer",
+        "esbenp.prettier-vscode",
+        "github.vscode-github-actions",
+        "ms-python.black-formatter",
+        "ms-python.debugpy",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "tamasfe.even-better-toml",
         "vsls-contrib.gitdoc"
       ],
       "settings": {
-        "debug.internalConsoleOptions": "openOnFirstSessionStart"
+        "files.watcherExclude": {
+          "**/.venv/**": true
+        },
+        "debug.internalConsoleOptions": "openOnFirstSessionStart",
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true,
+        "python.formatting.provider": "black",
+        "python.languageServer": "Pylance",
+        "python.linting.flake8Args": [
+          "--max-line-length 119"
+        ],
+        "python.linting.flake8Enabled": true,
+        "python.linting.mypyEnabled": true,
+        "pylance.insidersChannel": "daily",
+        "python.analysis.completeFunctionParens": true,
+        "python.analysis.logLevel": "Warning",
+        "python.analysis.memory.keepLibraryAst": true,
+        "python.autoComplete.addBrackets": true,
+        "python.diagnostics.sourceMapsEnabled": true,
+        "python.insidersChannel": "daily",
+        "python.linting.banditEnabled": true,
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.testing.pytestEnabled": true,
+        "[python]": {
+          "editor.defaultFormatter": "ms-python.black-formatter",
+          "editor.formatOnSave": true
+        }
       }
     }
   }

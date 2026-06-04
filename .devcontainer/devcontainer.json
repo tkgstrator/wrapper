@@ -50,56 +50,7 @@
         "tamasfe.even-better-toml",
         "twxs.cmake",
         "vsls-contrib.gitdoc"
-      ],
-      "settings": {
-        "debug.internalConsoleOptions": "openOnFirstSessionStart",
-        "editor.formatOnPaste": true,
-        "editor.formatOnSave": true,
-        "files.exclude": {
-          "**/.cache": true,
-          "**/.tmp": true,
-          "**/build": true,
-          "**/build-*": true,
-          "**/*.o": true,
-          "**/*.obj": true
-        },
-        "files.watcherExclude": {
-          "**/.cache/**": true,
-          "**/.tmp/**": true,
-          "**/build/**": true,
-          "**/build-*/**": true,
-          "**/rootfs/**": true,
-          "**/vendor/android-system/**": true,
-          "/opt/android-ndk-r23b/**": true
-        },
-        "search.exclude": {
-          "**/.cache/**": true,
-          "**/.tmp/**": true,
-          "**/build/**": true,
-          "**/build-*/**": true,
-          "**/rootfs/**": true,
-          "**/vendor/android-system/**": true
-        },
-        "C_Cpp.default.compilerPath": "/opt/android-ndk-r23b/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++",
-        "C_Cpp.default.intelliSenseMode": "linux-clang-arm64",
-        "C_Cpp.default.cppStandard": "c++17",
-        "C_Cpp.default.cStandard": "c11",
-        "C_Cpp.formatting": "clangFormat",
-        "C_Cpp.clang_format_fallbackStyle": "file",
-        "[c]": {
-          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
-        },
-        "[cpp]": {
-          "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
-        },
-        "cmake.buildDirectory": "${workspaceFolder}/build",
-        "cmake.configureOnOpen": true,
-        "cmake.generator": "Ninja",
-        "cmake.configureSettings": {
-          "NDK_PATH": "/opt/android-ndk-r23b",
-          "TARGET_ARCH": "x86_64"
-        }
-      }
+      ]
     }
   }
 }

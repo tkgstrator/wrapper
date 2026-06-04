@@ -10,10 +10,6 @@
     },
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/dhoeric/features/act:1": {},
-    "ghcr.io/devcontainers-extra/features/uv:1": {
-      "version": "latest"
-    },
-    "ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {},
     "ghcr.io/stu-bell/devcontainer-features/claude-code:0": {}
   },
   "postAttachCommand": "/bin/zsh .devcontainer/postAttachCommand.sh",

@@ -9,3 +9,9 @@
 Dockerfile
 README.md
 build
+.tmp
+android
+wrapper-android
+*.bak
+.env.local.bak
+rootfs/data/data/com.apple.android.music/files

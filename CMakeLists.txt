@@ -6,7 +6,11 @@ include(ExternalProject)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 
-set(ANDROID_NDK_PATH "$ENV{HOME}/android-ndk-r23b")
+if(DEFINED ENV{ANDROID_NDK_ROOT})
+    set(ANDROID_NDK_PATH "$ENV{ANDROID_NDK_ROOT}")
+else()
+    set(ANDROID_NDK_PATH "$ENV{HOME}/android-ndk-r23b")
+endif()
 set(TOOLCHAIN "${ANDROID_NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64")
 
 set(CMAKE_C_COMPILER "${TOOLCHAIN}/bin/aarch64-linux-android22-clang")

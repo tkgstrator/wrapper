@@ -13,6 +13,11 @@
     "ghcr.io/devcontainers-extra/features/apt-packages:1": {
       "packages": "gcc-aarch64-linux-gnu,g++-aarch64-linux-gnu,ninja-build,jq,clang-format"
     },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "moby": false,
+      "installDockerBuildx": true,
+      "installDockerComposeSwitch": true
+    },
     "ghcr.io/stu-bell/devcontainer-features/claude-code:0": {}
   },
   "postAttachCommand": "/bin/zsh .devcontainer/postAttachCommand.sh",

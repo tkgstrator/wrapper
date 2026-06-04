@@ -1,99 +1,31 @@
+# Build outputs
+/build/
+/build-*/
+/cmake-build-*/
 
-# Prerequisites
-*.d
+# Runtime mount for docker compose
+/data/
 
-# Object files
-*.o
-*.ko
-*.obj
-*.elf
+# Local rootfs overlay (IANA DB is vendored under vendor/android-system/…/zoneinfo)
+/rootfs/
 
-# Linker output
-*.ilk
-*.map
-*.exp
+# Final binaries at repo root (produced by build)
+/wrapper
+/main
 
-# Precompiled Headers
-*.gch
-*.pch
+# Tooling caches and APK staging
+/.tmp/
+/.temp/.login-response.json
+/.cache/
+*.apk
+*.apkm
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
-
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
-*.idb
-*.pdb
-
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-rootfs/
+# Editor / IDE
 .vscode/
-wrapper
-rootfs/system/bin/linker64
-build/
+.idea/
+*.swp
+*~
 
-# Enviroment Variables
-.env
-!.env.example
-
-# GitHub Copilot Instructions
-.github/copilot-instructions.md
+# OS
+.DS_Store
+Thumbs.db

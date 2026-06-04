@@ -11,7 +11,7 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/dhoeric/features/act:1": {},
     "ghcr.io/devcontainers-extra/features/apt-packages:1": {
-      "packages": "gcc-aarch64-linux-gnu,g++-aarch64-linux-gnu"
+      "packages": "gcc-aarch64-linux-gnu,g++-aarch64-linux-gnu,ninja-build,jq"
     },
     "ghcr.io/stu-bell/devcontainer-features/claude-code:0": {}
   },
@@ -19,6 +19,7 @@
   "postCreateCommand": "/bin/zsh .devcontainer/postCreateCommand.sh",
   "containerEnv": {
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "ANDROID_NDK_HOME": "/opt/android-ndk-r23b",
     "ANDROID_NDK_ROOT": "/opt/android-ndk-r23b"
   },
   "mounts": [
@@ -56,25 +57,33 @@
         "editor.formatOnSave": true,
         "files.exclude": {
           "**/.cache": true,
+          "**/.tmp": true,
           "**/build": true,
+          "**/build-*": true,
           "**/*.o": true,
-          "**/*.obj": true,
-          "subhook/build": true
+          "**/*.obj": true
         },
         "files.watcherExclude": {
           "**/.cache/**": true,
+          "**/.tmp/**": true,
           "**/build/**": true,
-          "**/subhook/**": true,
+          "**/build-*/**": true,
+          "**/rootfs/**": true,
+          "**/vendor/android-system/**": true,
           "/opt/android-ndk-r23b/**": true
         },
         "search.exclude": {
           "**/.cache/**": true,
+          "**/.tmp/**": true,
           "**/build/**": true,
-          "**/rootfs/system/**": true,
-          "**/subhook/**": true
+          "**/build-*/**": true,
+          "**/rootfs/**": true,
+          "**/vendor/android-system/**": true
         },
-        "C_Cpp.default.compilerPath": "/opt/android-ndk-r23b/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android22-clang++",
+        "C_Cpp.default.compilerPath": "/opt/android-ndk-r23b/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang++",
         "C_Cpp.default.intelliSenseMode": "linux-clang-arm64",
+        "C_Cpp.default.cppStandard": "c++17",
+        "C_Cpp.default.cStandard": "c11",
         "C_Cpp.formatting": "clangFormat",
         "C_Cpp.clang_format_fallbackStyle": "file",
         "[c]": {
@@ -84,7 +93,12 @@
           "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
         },
         "cmake.buildDirectory": "${workspaceFolder}/build",
-        "cmake.configureOnOpen": true
+        "cmake.configureOnOpen": true,
+        "cmake.generator": "Ninja",
+        "cmake.configureSettings": {
+          "NDK_PATH": "/opt/android-ndk-r23b",
+          "TARGET_ARCH": "x86_64"
+        }
       }
     }
   }

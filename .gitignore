@@ -129,7 +129,7 @@ flycheck_*.el
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
 
 # Thumbnails
 ._*
@@ -239,7 +239,13 @@ $RECYCLE.BIN/
 
 # Final binaries at repo root (produced by build)
 /wrapper
+/wrapper-android
+/wrapper-rootless
+/wrapper.v2.bak
 /main
+
+# Android proot / native helper staging (binary blobs)
+/android/
 
 # Tooling caches and APK staging
 /.tmp/

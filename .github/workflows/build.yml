@@ -5,6 +5,11 @@ on:
     branches: [master]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      apk_url:
+        description: 'Signed URL to an Apple Music .apk or .apkm (overrides APK_URL secret; required if the secret is not set).'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -37,7 +42,9 @@ jobs:
             docker_platform: linux/arm64
 
     env:
-      APK_URL: ${{ secrets.APK_URL }}
+      # workflow_dispatch input wins (signed URLs are short-lived, so the maintainer
+      # pastes one per run); otherwise fall back to the long-lived APK_URL secret.
+      APK_URL: ${{ inputs.apk_url || secrets.APK_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -56,11 +63,12 @@ jobs:
       - name: Make scripts executable
         run: chmod +x tools/extract-libs.sh tools/stage-system.sh
 
-      - name: Sanity check APK_URL secret
+      - name: Sanity check APK_URL
         run: |
           if [[ -z "${APK_URL}" ]]; then
-            echo "::error::APK_URL secret is not set."
-            echo "Maintainers: set APK_URL to a private/local CI URL for a compatible .apk or .apkm."
+            echo "::error::APK_URL is not set."
+            echo "On workflow_dispatch: paste a signed .apk/.apkm URL into the apk_url input."
+            echo "On push (master / v* tag): set the APK_URL repository secret."
             exit 1
           fi
 
@@ -131,11 +139,12 @@ jobs:
           curl -sf http://127.0.0.1:8080/health | jq .
           docker rm -f wrapper-smoke
 
-      # Only push from master branch or v* tags on the canonical repo.
-      # PRs (incl. same-repo) and develop/manual runs build + smoke only.
+      # Push only when the ref is master or a v* tag — fires for push events and for
+      # workflow_dispatch runs targeted at one of those refs. Manual runs from feature
+      # branches build + smoke only.
       - name: Log in to GHCR
         if: |
-          github.event_name == 'push' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
           (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
         uses: docker/login-action@v3
         with:
@@ -145,7 +154,7 @@ jobs:
 
       - name: Push per-arch image to GHCR
         if: |
-          github.event_name == 'push' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
           (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
         run: |
           docker push "${{ steps.image.outputs.ref }}"
@@ -155,7 +164,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: |
-      github.event_name == 'push' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
       (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
 
     steps:

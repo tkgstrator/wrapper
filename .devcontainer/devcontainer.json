@@ -18,6 +18,10 @@
       "installDockerBuildx": true,
       "installDockerComposeSwitch": true
     },
+    "ghcr.io/shyim/devcontainers-features/bun:0": {},
+    "ghcr.io/devcontainers/features/node:1.5.0": {
+      "version": "25.9.0"
+    },
     "ghcr.io/stu-bell/devcontainer-features/claude-code:0": {}
   },
   "postAttachCommand": "/bin/zsh .devcontainer/postAttachCommand.sh",

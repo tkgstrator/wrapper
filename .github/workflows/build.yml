@@ -4,7 +4,6 @@ on:
   push:
     branches: [master]
     tags: ['v*']
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -23,10 +22,6 @@ jobs:
   build:
     name: build (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
-    # Fork PRs cannot use repository secrets (APK_URL).
-    if: |
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
 
     strategy:
       fail-fast: false

@@ -60,7 +60,7 @@ namespace {
 constexpr const char* kDefaultHost    = "0.0.0.0";
 constexpr int         kDefaultPort    = 80;
 constexpr int         kDefaultWorkerPort = 18080;
-constexpr const char* kVersion        = "0.0.1";
+constexpr const char* kVersion        = "2.0.0";
 
 std::atomic<httplib::Server*> g_server{nullptr};
 

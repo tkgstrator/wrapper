@@ -18,7 +18,7 @@ namespace wrapper {
 
 struct ServerInfo {
     // Free-form version string surfaced via /health and /me.
-    std::string version = "0.0.1";
+    std::string version = "2.0.0";
 
     // True iff Apple lib initialization is enabled (controlled by
     // WRAPPER_APPLE_INIT). Surfaced via /health so it is obvious when

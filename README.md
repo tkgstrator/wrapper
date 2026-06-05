@@ -273,21 +273,42 @@ The daemon reads `WRAPPER_*` environment variables (forwarded via
 
 ### CI build
 
-The `.github/workflows/build.yml` workflow runs on **push** to `main`,
-on **pull_request** (same-repo only for the full job), and **workflow_dispatch**.
-It uses the same host steps as above plus a Docker build and `/health` smoke
-test, with one repository secret:
+The `.github/workflows/build.yml` workflow runs on:
 
-- `APK_URL` - private/local CI URL for a compatible Apple Music `.apk` or
-  `.apkm`. The artifact is downloaded inside CI only, extracted with
-  `tools/extract-libs.sh`, and is not committed.
+- **push** to `master`
+- **push** of a `v*` tag
+- **workflow_dispatch** (with an optional `apk_url` input)
 
-**Matrix:** both `x86_64` and `arm64-v8a` jobs use `ubuntu-latest`. The arm64 image is
-`linux/arm64` at runtime; QEMU is enabled before the smoke `docker run` so the job works
-on amd64 GitHub runners. The compile stage stays **linux/amd64** for the official NDK ZIP.
+It runs the same host steps as a local build (extract libs, stage system
+binaries) plus a Docker build and a `/health` smoke test against the freshly
+built image.
 
-Pull requests opened from forks skip the build job because they cannot read the
-secret.
+The Apple Music artifact URL is resolved in this order:
+
+1. `workflow_dispatch.apk_url` input - paste a short-lived signed URL when
+   manually dispatching.
+2. `APK_URL` repository secret - long-lived fallback used by `push` events.
+
+If neither is set the job fails before the build starts. The downloaded
+artifact lives in `.tmp/` inside the runner only and is never committed.
+
+**Matrix:** both `x86_64` and `arm64-v8a` jobs run on `ubuntu-latest`. The
+arm64 image is `linux/arm64` at runtime; QEMU is enabled before the smoke
+`docker run` so the job works on amd64 GitHub runners. The compile stage stays
+**linux/amd64** for the official NDK ZIP.
+
+**GHCR publish:** when the trigger is `push` to `master` / `v*` tag (or a
+`workflow_dispatch` run targeted at one of those refs), each matrix job pushes
+a per-arch image to `ghcr.io/<owner>/wrapper:<sha>-<amd64|arm64>`, and a
+follow-up `manifest` job stitches them into a multi-arch manifest with these
+tags:
+
+- `:<sha>` - always (immutable per commit).
+- `:latest` - only on `master` push.
+- `:<tag-name>` (e.g. `:v1.2.3`) - only on `v*` tag push.
+
+`workflow_dispatch` runs from feature branches still build and smoke-test, but
+skip the GHCR push.
 
 ## License
 

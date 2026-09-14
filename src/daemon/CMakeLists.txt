@@ -39,6 +39,7 @@ FetchContent_MakeAvailable(nlohmann_json)
 # -----------------------------------------------------------------------------
 add_executable(main
     main.cpp
+    decrypt_tcp.cpp
     server.cpp
     supervisor.cpp
     apple/auth.cpp

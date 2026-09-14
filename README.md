@@ -36,10 +36,15 @@ Most endpoints accept and return `application/json`. `POST /decrypt`
 uses `application/octet-stream` for successful request and response bodies;
 errors still return JSON.
 
+Sample decryption is served two ways, and both reach the same worker:
+`POST /decrypt` over HTTP (gamdl 3.7.x) and the WV2D TCP listener on
+`${WRAPPER_DECRYPT_PORT:-10020}` (gamdl >= 3.8.0). See
+[TCP Decrypt Listener](#tcp-decrypt-listener).
+
 | Method   | Path         | Description                                                                                                                                                                                                                                                                                                                                                                        |
 | -------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET`    | `/health`    | Liveness probe. `{status, version, runtime}` — `runtime.playback_ready` is true when FairPlay decrypt is available.                                                                                                                                                                                                                                                                |
-| `GET`    | `/me`        | `{version, runtime, auth}` — same runtime flags as `/health`.                                                                                                                                                                                                                                                                                                                      |
+| `GET`    | `/health`    | Liveness probe. `{status, version, build_version, runtime}` — `runtime.playback_ready` is true when FairPlay decrypt is available. See [Version fields](#version-fields).                                                                                                                                                                                                          |
+| `GET`    | `/me`        | `{version, build_version, runtime, auth}` — same runtime flags as `/health`.                                                                                                                                                                                                                                                                                                       |
 | `POST`   | `/login`     | Body: `{"username": "...", "password": "..."}` or `{"apple_id": "...", "password": "..."}` (synonyms). Drives Apple's `AuthenticateFlow`. Returns `200` + token snapshot, `202` if **2FA** is required (then `POST /login/2fa`), or `401` on failure.                                                                                                                              |
 | `POST`   | `/login/2fa` | Body: `{"code": "123456"}`. Continues a login waiting for HSA2.                                                                                                                                                                                                                                                                                                                    |
 | `GET`    | `/playback`  | Query string `?adam_id=<numeric store id>`. Returns `200` with a JSON object `{"songList":[...]}` containing the **whole MZ playback dispatch** Apple's `subDownload` URL bag returns (every flavor, key URI, asset URL, metadata field). CFData fields are base64; CFDate fields are ISO 8601. Needs an **authenticated** session; otherwise `401` / `503`. Apple errors → `502`. |
@@ -76,6 +81,93 @@ sample_len[sample_count - 1]
 sample[0] bytes
 ...
 sample[sample_count - 1] bytes
+```
+
+### Version fields
+
+`GET /health` and `GET /me` report two version strings, and they mean
+different things:
+
+| Field           | Example   | Meaning                                                                 |
+| --------------- | --------- | ----------------------------------------------------------------------- |
+| `version`       | `0.0.2`   | The **wrapper-v2 API contract** this daemon speaks. Client-facing.       |
+| `build_version` | `2.0.0`   | This repository's own release. Informational only.                       |
+
+`version` is a compatibility token, not a changelog. gamdl >= 3.8.0 compares
+`me.version` against `0.0.2` **exactly** and refuses to talk to the daemon on
+any mismatch, so it tracks upstream wrapper-v2's API and does not move when
+this fork cuts a release. Bump `build_version` for fork releases; only change
+`version` when the wire contract itself changes and the clients agree.
+
+Both live in `src/daemon/main.cpp` (`kVersion`, `kBuildVersion`).
+
+### TCP Decrypt Listener
+
+gamdl >= 3.8.0 no longer decrypts over HTTP. Its native extension
+(`gamdl._ammuxer`) opens a TCP connection and exchanges **WV2D** frames, so the
+supervisor serves a listener on `WRAPPER_DECRYPT_HOST` /
+`WRAPPER_DECRYPT_PORT` (defaults `0.0.0.0` / `10020`) alongside the HTTP port.
+`POST /decrypt` is unchanged and still serves 3.7.x clients.
+
+Each batch is translated into the same internal `POST /decrypt` call the HTTP
+route makes, so worker restart, retry, and the decrypt watchdog behave
+identically on both paths. The FairPlay code is not duplicated.
+
+Frame header — 16 bytes, all integers big-endian:
+
+```text
+u32 magic        0x57563244 ("WV2D")
+u16 version      1
+u16 kind         BATCH=1  OK=2  ERROR=3  CLOSE=9
+u32 request_id   echoed back on the response
+u32 payload_len
+```
+
+`BATCH` payload — note `adam_len` and `uri_len` are **u16** here, where the
+HTTP route uses u32:
+
+```text
+u16 adam_len
+u16 uri_len
+u32 sample_count
+u32 sample_len[sample_count]
+adam_id bytes
+uri bytes
+sample[0..sample_count - 1] bytes
+```
+
+`OK` payload is byte-identical to the HTTP `POST /decrypt` response body:
+
+```text
+u32 sample_count
+u32 sample_len[sample_count]
+sample[0..sample_count - 1] bytes
+```
+
+`ERROR` payload is a UTF-8 message. `CLOSE` carries no payload.
+
+A connection is a session: several `BATCH` frames may arrive on one
+connection, and it ends on `CLOSE` or EOF. Every response echoes the
+request's `request_id`; clients reject a mismatch. A malformed frame gets one
+`ERROR` frame and the connection is then closed.
+
+Smoke test the listener without a client — a `CLOSE`-only frame should be
+accepted and the connection closed:
+
+```bash
+printf '\x57\x56\x32\x44\x00\x01\x00\x09\x00\x00\x00\x00\x00\x00\x00\x00' \
+  | nc 127.0.0.1 10020
+```
+
+The framing, the batch parser, and the session loop have a host-native
+round-trip check that stubs out the decrypt backend, so it needs neither the
+NDK nor Apple's libraries:
+
+```bash
+g++ -std=c++17 -Wall -Wextra -Wpedantic -pthread -I src/daemon \
+    -o /tmp/decrypt_tcp_roundtrip \
+    tests/decrypt_tcp_roundtrip.cpp src/daemon/decrypt_tcp.cpp
+/tmp/decrypt_tcp_roundtrip
 ```
 
 The endpoint accepts and returns `application/octet-stream` on success.
@@ -205,9 +297,14 @@ curl http://127.0.0.1/me
 curl -X DELETE http://127.0.0.1/login
 ```
 
-The daemon binds port 80 inside the container and the compose file maps it
-to host port 80 by default. Override with `HTTP_PORT=8080 docker compose up`
-on machines that already have something on `:80`.
+The daemon binds port 80 (HTTP) and port 10020 (WV2D TCP decrypt) inside the
+container, and the compose file maps both to the same host ports by default.
+Override with `HTTP_PORT=8080` / `DECRYPT_PORT=11020 docker compose up` on
+machines that already have something on those ports.
+
+Only clients that decrypt need `:10020`. When gamdl runs in another container
+on the same compose network it reaches the listener as `wrapper:10020` without
+any host publishing at all.
 
 ### arm64-v8a image (Apple Silicon / AArch64 Linux)
 
@@ -251,6 +348,9 @@ The daemon reads `WRAPPER_*` environment variables (forwarded via
 
 - `WRAPPER_HOST`, `WRAPPER_PORT` - public supervisor bind address inside the
   chroot.
+- `WRAPPER_DECRYPT_HOST`, `WRAPPER_DECRYPT_PORT` - bind address and port for the
+  WV2D TCP decrypt listener. Defaults `0.0.0.0` and `10020`. Supervisor only; a
+  bind failure here is logged and leaves the HTTP server running.
 - `WRAPPER_MODE` - process role. Default `supervisor`; the supervisor sets
   `worker` automatically for its private subprocess.
 - `WRAPPER_WORKER_PORT` - private loopback port used by the supervisor to talk

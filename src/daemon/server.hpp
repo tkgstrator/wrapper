@@ -17,8 +17,15 @@
 namespace wrapper {
 
 struct ServerInfo {
-    // Free-form version string surfaced via /health and /me.
-    std::string version = "2.0.0";
+    // API contract version surfaced as `version` via /health and /me.
+    // gamdl >= 3.8.0 compares this against "0.0.2" exactly and refuses to
+    // talk to the daemon on a mismatch, so it tracks the wrapper-v2 API and
+    // not this fork's own releases.
+    std::string version = "0.0.2";
+
+    // This fork's own release, surfaced as `build_version`. Purely
+    // informational; clients ignore unknown fields.
+    std::string build_version = "2.0.0";
 
     // True iff Apple lib initialization is enabled (controlled by
     // WRAPPER_APPLE_INIT). Surfaced via /health so it is obvious when

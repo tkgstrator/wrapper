@@ -41,9 +41,13 @@ struct WorkerHttpResponse {
 
 class Supervisor::Impl {
 public:
-    Impl(std::string argv0, std::string version, int worker_port)
+    Impl(std::string argv0,
+         std::string version,
+         std::string build_version,
+         int worker_port)
         : argv0_(std::move(argv0)),
           version_(std::move(version)),
+          build_version_(std::move(build_version)),
           worker_port_(worker_port) {}
 
     ~Impl() {
@@ -56,6 +60,7 @@ public:
             json body = {
                 {"status", "ok"},
                 {"version", version_},
+                {"build_version", build_version_},
                 {"mode", "supervisor"},
                 {"worker", {
                     {"reachable", wh.transport_ok},
@@ -118,7 +123,50 @@ public:
         stop_locked();
     }
 
+    // Same path as the HTTP POST /decrypt route, so the TCP listener inherits
+    // worker restart/retry without duplicating any of it.
+    bool decrypt(const std::string& http_body,
+                 std::string* payload,
+                 std::string* error) {
+        WorkerHttpResponse wh =
+            request_with_decrypt_recovery("/decrypt", http_body,
+                                          "application/octet-stream");
+        if (!wh.transport_ok) {
+            *error = wh.error.empty() ? "worker unavailable" : wh.error;
+            return false;
+        }
+        if (wh.status != 200) {
+            *error = describe_decrypt_failure(wh);
+            return false;
+        }
+        *payload = std::move(wh.body);
+        return true;
+    }
+
 private:
+    // Turns the worker's JSON error body into one line for the WV2D ERROR
+    // frame. Falls back to the status code when the body is not the shape we
+    // expect, so a proxy or crash page cannot make this throw.
+    static std::string describe_decrypt_failure(const WorkerHttpResponse& wh) {
+        std::string detail;
+        try {
+            json parsed = json::parse(wh.body);
+            if (parsed.is_object()) {
+                if (parsed.contains("detail") && parsed["detail"].is_string()) {
+                    detail = parsed["detail"].get<std::string>();
+                } else if (parsed.contains("error") && parsed["error"].is_string()) {
+                    detail = parsed["error"].get<std::string>();
+                }
+            }
+        } catch (const std::exception&) {
+            // Not JSON - fall through to the status-only message.
+        }
+        std::string out = "worker decrypt failed (status "
+                          + std::to_string(wh.status) + ")";
+        if (!detail.empty()) out += ": " + detail;
+        return out;
+    }
+
     bool ensure_started() {
         std::lock_guard<std::mutex> lock(mu_);
         reap_locked();
@@ -426,6 +474,7 @@ private:
 
     std::string argv0_;
     std::string version_;
+    std::string build_version_;
     int worker_port_ = 18080;
     pid_t pid_ = -1;
     int consecutive_worker_start_failures_ = 0;
@@ -433,8 +482,14 @@ private:
     std::mutex request_mu_;
 };
 
-Supervisor::Supervisor(std::string argv0, std::string version, int worker_port)
-    : impl_(new Impl(std::move(argv0), std::move(version), worker_port)) {}
+Supervisor::Supervisor(std::string argv0,
+                       std::string version,
+                       std::string build_version,
+                       int worker_port)
+    : impl_(new Impl(std::move(argv0),
+                     std::move(version),
+                     std::move(build_version),
+                     worker_port)) {}
 
 Supervisor::~Supervisor() {
     delete impl_;
@@ -446,6 +501,12 @@ void Supervisor::mount(httplib::Server& svr) {
 
 void Supervisor::stop_worker() {
     impl_->stop_worker();
+}
+
+bool Supervisor::decrypt(const std::string& http_body,
+                         std::string* payload,
+                         std::string* error) {
+    return impl_->decrypt(http_body, payload, error);
 }
 
 }  // namespace wrapper

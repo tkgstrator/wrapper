@@ -9,6 +9,11 @@
 //   POST   /login/2fa     body: { "code": "123456" }
 //   DELETE /login
 //
+// The supervisor also serves a WV2D TCP decrypt listener (default :10020)
+// for gamdl >= 3.8.0, which no longer decrypts over HTTP. See decrypt_tcp.hpp
+// for the framing. HTTP POST /decrypt is unchanged and still serves gamdl
+// 3.7.x.
+//
 // Persistence: mount WRAPPER_BASE_DIR so Apple keeps mpl_db across
 // restarts. After a prior POST /login (or first-time -L style login),
 // startup may restore tokens from that session without password
@@ -19,6 +24,10 @@
 //
 //   WRAPPER_HOST          Bind address (default 0.0.0.0)
 //   WRAPPER_PORT          Bind port    (default 80)
+//   WRAPPER_DECRYPT_HOST  TCP decrypt bind address (default 0.0.0.0,
+//                         supervisor only)
+//   WRAPPER_DECRYPT_PORT  TCP decrypt bind port    (default 10020,
+//                         supervisor only)
 //   WRAPPER_MODE          supervisor (default) or worker
 //   WRAPPER_WORKER_PORT   Private supervisor->worker port (default 18080)
 //   WRAPPER_BASE_DIR      Apple-lib working dir (default
@@ -42,6 +51,7 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <thread>
 
 #include <signal.h>
 #include <ucontext.h>
@@ -52,6 +62,7 @@
 #include "apple/auth.hpp"
 #include "apple/loader.hpp"
 #include "apple/runtime.hpp"
+#include "decrypt_tcp.hpp"
 #include "server.hpp"
 #include "supervisor.hpp"
 
@@ -60,7 +71,13 @@ namespace {
 constexpr const char* kDefaultHost    = "0.0.0.0";
 constexpr int         kDefaultPort    = 80;
 constexpr int         kDefaultWorkerPort = 18080;
-constexpr const char* kVersion        = "2.0.0";
+// API contract version reported as `version` by /health and /me. gamdl
+// >= 3.8.0 requires exactly "0.0.2" and refuses the daemon otherwise, so this
+// tracks the wrapper-v2 API rather than this fork's releases.
+constexpr const char* kVersion        = "0.0.2";
+
+// This fork's own release, reported alongside it as `build_version`.
+constexpr const char* kBuildVersion   = "2.0.0";
 
 std::atomic<httplib::Server*> g_server{nullptr};
 
@@ -145,9 +162,18 @@ bool consume_argv(int argc, char** argv, ProgramMode* mode) {
                 "WRAPPER_PORT (defaults %s / %d). Worker port is set with\n"
                 "WRAPPER_WORKER_PORT (default %d).\n"
                 "\n"
+                "The supervisor also serves a WV2D TCP decrypt listener on\n"
+                "WRAPPER_DECRYPT_HOST / WRAPPER_DECRYPT_PORT (defaults %s / %d)\n"
+                "for gamdl >= 3.8.0. HTTP POST /decrypt still serves 3.7.x.\n"
+                "\n"
+                "Reported versions: version=%s is the gamdl-facing API contract\n"
+                "value, build_version=%s is this fork's own release.\n"
+                "\n"
                 "Environment:\n"
                 "  WRAPPER_HOST             bind address\n"
                 "  WRAPPER_PORT             bind port\n"
+                "  WRAPPER_DECRYPT_HOST     TCP decrypt bind address (supervisor)\n"
+                "  WRAPPER_DECRYPT_PORT     TCP decrypt bind port (supervisor)\n"
                 "  WRAPPER_MODE             supervisor or worker\n"
                 "  WRAPPER_WORKER_PORT      private worker bind port\n"
                 "  WRAPPER_BASE_DIR         Apple-lib working dir\n"
@@ -157,7 +183,9 @@ bool consume_argv(int argc, char** argv, ProgramMode* mode) {
                 "  WRAPPER_APPLE_ID         optional /me label after restore\n"
                 "  WRAPPER_USERNAME         Apple ID for env auto-login (+WRAPPER_PASSWORD)\n"
                 "  WRAPPER_PASSWORD         app password for env auto-login\n",
-                kVersion, argv[0], kDefaultHost, kDefaultPort, kDefaultWorkerPort);
+                kVersion, argv[0], kDefaultHost, kDefaultPort, kDefaultWorkerPort,
+                wrapper::kDefaultDecryptHost, wrapper::kDefaultDecryptPort,
+                kVersion, kBuildVersion);
             return false;
         }
         std::fprintf(stderr,
@@ -251,17 +279,52 @@ int main(int argc, char** argv) {
     }
 
     if (mode == ProgramMode::Supervisor) {
-        wrapper::Supervisor supervisor(argc > 0 ? argv[0] : "/system/bin/main",
-                                       kVersion, worker_port);
+        // Deliberately owned for the whole process lifetime and never
+        // destroyed: the detached decrypt listener thread below holds a
+        // reference to it, so running the destructor at return would be a
+        // use-after-free in that thread. The process exits immediately after,
+        // which reclaims everything.
+        auto* supervisor_ptr =
+            new wrapper::Supervisor(argc > 0 ? argv[0] : "/system/bin/main",
+                                    kVersion, kBuildVersion, worker_port);
+        wrapper::Supervisor& supervisor = *supervisor_ptr;
 
         httplib::Server svr;
         g_server.store(&svr);
         supervisor.mount(svr);
 
+        // WV2D TCP decrypt listener for gamdl >= 3.8.0. It runs on its own
+        // thread and translates each batch into the same internal
+        // POST /decrypt call the HTTP route uses, so worker restart and retry
+        // are shared. A bind failure is logged and leaves HTTP serving.
+        wrapper::DecryptTcpOptions decrypt_options;
+        decrypt_options.host =
+            env_or("WRAPPER_DECRYPT_HOST", wrapper::kDefaultDecryptHost);
+        decrypt_options.port =
+            env_int("WRAPPER_DECRYPT_PORT", wrapper::kDefaultDecryptPort);
+
+        std::thread decrypt_thread([supervisor_ptr, decrypt_options]() {
+            wrapper::DecryptBackend backend =
+                [supervisor_ptr](const std::string& http_body) {
+                    wrapper::DecryptOutcome outcome;
+                    outcome.ok = supervisor_ptr->decrypt(http_body, &outcome.payload,
+                                                        &outcome.error);
+                    return outcome;
+                };
+            if (!wrapper::run_decrypt_tcp(decrypt_options, std::move(backend))) {
+                std::fprintf(stderr,
+                             "wrapper-v2: TCP decrypt listener stopped on %s:%d; "
+                             "HTTP POST /decrypt is unaffected\n",
+                             decrypt_options.host.c_str(), decrypt_options.port);
+            }
+        });
+        decrypt_thread.detach();
+
         std::fprintf(stderr,
-                     "wrapper-v2: %s supervisor listening on %s:%d "
+                     "wrapper-v2: %s (build %s) supervisor listening on %s:%d "
                      "(worker 127.0.0.1:%d)\n",
-                     kVersion, listen_host.c_str(), listen_port, worker_port);
+                     kVersion, kBuildVersion, listen_host.c_str(), listen_port,
+                     worker_port);
 
         if (!svr.listen(listen_host, listen_port)) {
             std::fprintf(stderr, "wrapper-v2: supervisor bind failed on %s:%d\n",
@@ -276,6 +339,7 @@ int main(int argc, char** argv) {
 
     wrapper::ServerInfo info;
     info.version = kVersion;
+    info.build_version = kBuildVersion;
     info.apple_init_enabled = env_bool("WRAPPER_APPLE_INIT", true);
 
     auto& account = wrapper::apple::Account::instance();

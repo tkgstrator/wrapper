@@ -98,6 +98,6 @@ COPY --from=build /app/rootfs         /app/rootfs
 # where the launcher will point SSL_CERT_FILE / CURL_CA_BUNDLE at it.
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /app/rootfs/etc/ssl/certs/ca-certificates.crt
 
-EXPOSE 80
+EXPOSE 80 10020
 
 ENTRYPOINT ["/app/wrapper"]

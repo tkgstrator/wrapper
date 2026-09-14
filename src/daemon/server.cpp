@@ -306,9 +306,10 @@ void Server::mount() {
             runtime["device_info"] = rt_.device_info();
         }
         respond_json(res, 200, json{
-            {"status",  "ok"},
-            {"version", info_.version},
-            {"runtime", std::move(runtime)},
+            {"status",        "ok"},
+            {"version",       info_.version},
+            {"build_version", info_.build_version},
+            {"runtime",       std::move(runtime)},
         });
     });
 
@@ -323,9 +324,10 @@ void Server::mount() {
             (void)authenticated_or_restored(account_, loader_, rt_);
         }
         json body = {
-            {"version", info_.version},
-            {"runtime", runtime_to_json(loader_, rt_, info_)},
-            {"auth", snapshot_to_json(account_.public_snapshot())},
+            {"version",       info_.version},
+            {"build_version", info_.build_version},
+            {"runtime",       runtime_to_json(loader_, rt_, info_)},
+            {"auth",          snapshot_to_json(account_.public_snapshot())},
         };
         respond_json(res, 200, std::move(body));
     });

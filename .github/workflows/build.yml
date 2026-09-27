@@ -60,26 +60,72 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             jq unzip curl ca-certificates
 
+      - name: Validate Compose config
+        run: docker compose config --quiet
+
+      # act injects Node from outside the runner image. Preserve its directory
+      # before the Rust action prepends CARGO_HOME to PATH, otherwise later
+      # JavaScript actions (such as docker/login-action) cannot find Node.
+      - name: Preserve Node for act
+        if: ${{ env.ACT }}
+        run: echo "$(dirname "$(command -v node)")" >> "$GITHUB_PATH"
+
+      - name: Install Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust unit tests
+        run: cargo test --locked
+
       - name: Make scripts executable
         run: chmod +x tools/extract-libs.sh tools/stage-system.sh
 
-      - name: Sanity check APK_URL
-        run: |
-          if [[ -z "${APK_URL}" ]]; then
-            echo "::error::APK_URL is not set."
-            echo "On workflow_dispatch: paste a signed .apk/.apkm URL into the apk_url input."
-            echo "On push (master / v* tag): set the APK_URL repository secret."
-            exit 1
-          fi
-
-      - name: Download Apple Music artifact
+      # LOCAL_APK_PATH is an escape hatch for local `act` runs: point it at an
+      # .apk/.apkm already on disk and APK_URL plus the download are skipped.
+      # It is never set on GitHub-hosted runs, so the URL path stays the default.
+      - name: Resolve Apple Music artifact
         run: |
           mkdir -p .tmp
-          artifact=".tmp/apple-music.apk"
-          if [[ "${APK_URL,,}" == *.apkm* ]]; then
-            artifact=".tmp/apple-music.apkm"
+
+          if [[ -n "${LOCAL_APK_PATH}" ]]; then
+            if [[ ! -f "${LOCAL_APK_PATH}" ]]; then
+              echo "::error::LOCAL_APK_PATH is set to '${LOCAL_APK_PATH}' but that file does not exist."
+              echo "With act, pass a path relative to the repo root and run with --bind (-b),"
+              echo "because .tmp/ and *.apk/*.apkm are gitignored and are not copied otherwise."
+              exit 1
+            fi
+            case "${LOCAL_APK_PATH,,}" in
+              *.apk)  artifact=".tmp/apple-music.apk" ;;
+              *.apkm) artifact=".tmp/apple-music.apkm" ;;
+              *)
+                echo "::error::LOCAL_APK_PATH must end in .apk or .apkm (got '${LOCAL_APK_PATH}')."
+                exit 1
+                ;;
+            esac
+            # LOCAL_APK_PATH may already BE the normalized path (the README's act
+            # example points straight at .tmp/). -ef compares device+inode, so it
+            # also catches symlinks and hard links; GNU cp would abort with
+            # "are the same file".
+            if [[ "${LOCAL_APK_PATH}" -ef "${artifact}" ]]; then
+              echo "Local artifact is already at ${artifact}; using it in place."
+            else
+              cp "${LOCAL_APK_PATH}" "${artifact}"
+              echo "Using local artifact: ${LOCAL_APK_PATH} -> ${artifact}"
+            fi
+          else
+            if [[ -z "${APK_URL}" ]]; then
+              echo "::error::APK_URL is not set."
+              echo "On workflow_dispatch: paste a signed .apk/.apkm URL into the apk_url input."
+              echo "On push (master / v* tag): set the APK_URL repository secret."
+              echo "Locally with act: set LOCAL_APK_PATH to an .apk/.apkm in the repo."
+              exit 1
+            fi
+            artifact=".tmp/apple-music.apk"
+            if [[ "${APK_URL,,}" == *.apkm* ]]; then
+              artifact=".tmp/apple-music.apkm"
+            fi
+            curl -fL --retry 3 --retry-delay 2 -o "${artifact}" "${APK_URL}"
           fi
-          curl -fL --retry 3 --retry-delay 2 -o "${artifact}" "${APK_URL}"
+
           echo "APPLE_MUSIC_ARTIFACT=${artifact}" >> "$GITHUB_ENV"
 
       - name: Extract Apple native libs
@@ -104,10 +150,11 @@ jobs:
             --build-arg BUILD_PLATFORM=${{ matrix.docker_platform }} \
             --build-arg RUNTIME_PLATFORM=${{ matrix.docker_platform }} \
             --build-arg TARGET_ARCH=${{ matrix.arch }} \
+            --provenance=false \
             -t "${{ steps.image.outputs.ref }}" \
             .
 
-      - name: Smoke test (/health)
+      - name: Smoke test (HTTP and TCP)
         run: |
           # No --rm: if the app exits immediately, Docker removes --rm containers
           # and a later docker stop hits "No such container".
@@ -120,23 +167,40 @@ jobs:
             --cap-add SYS_ADMIN --cap-add SYS_CHROOT --cap-add SYS_PTRACE \
             --security-opt apparmor=unconfined \
             -p 8080:80 \
+            -p 11020:10020 \
             "${{ steps.image.outputs.ref }}"
-          ok=0
+          http_ok=0
           for i in $(seq 1 40); do
             if curl -sf http://127.0.0.1:8080/health >/dev/null; then
               echo "health OK after ${i} attempt(s)"
-              ok=1
+              http_ok=1
               break
             fi
             sleep 0.5
           done
-          if [[ "$ok" != "1" ]]; then
+          if [[ "$http_ok" != "1" ]]; then
             echo "::error::health did not become ready in time"
             docker logs wrapper-smoke 2>&1 || true
             docker rm -f wrapper-smoke 2>/dev/null || true
             exit 1
           fi
           curl -sf http://127.0.0.1:8080/health | jq .
+
+          tcp_ok=0
+          for i in $(seq 1 20); do
+            if timeout 2 bash -c '</dev/tcp/127.0.0.1/11020' 2>/dev/null; then
+              echo "TCP decrypt listener OK after ${i} attempt(s)"
+              tcp_ok=1
+              break
+            fi
+            sleep 0.5
+          done
+          if [[ "$tcp_ok" != "1" ]]; then
+            echo "::error::TCP decrypt listener did not accept connections in time"
+            docker logs wrapper-smoke 2>&1 || true
+            docker rm -f wrapper-smoke 2>/dev/null || true
+            exit 1
+          fi
           docker rm -f wrapper-smoke
 
       # Push only when the ref is master or a v* tag — fires for push events and for

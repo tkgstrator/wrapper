@@ -230,6 +230,9 @@ $RECYCLE.BIN/
 /build-*/
 /cmake-build-*/
 
+# Rust supervisor build output
+/target/
+
 # Runtime mount for docker compose
 /data/
 

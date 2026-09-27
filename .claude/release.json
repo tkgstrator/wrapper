@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"version": {
+		"source": "src/daemon/main.cpp",
+		"derivedFiles": ["src/daemon/info.hpp"],
+		"bumpCommand": null
+	},
+	"branches": {
+		"source": "develop",
+		"target": "master"
+	},
+	"pullRequest": {
+		"titleTemplate": "release: v{version}",
+		"mergeMethod": "merge"
+	},
+	"tag": {
+		"template": "v{version}",
+		"annotated": true
+	},
+	"checks": {
+		"required": []
+	},
+	"workflows": {
+		"releaseFiles": [
+			".github/workflows/build.yml",
+			".github/workflows/backmerge.yaml"
+		],
+		"triggerFingerprint": "sha256:12ac38622f278fa2c52d5aa3f00d9a5ccb60f77cf64a2860beaba6a7b880e87c"
+	},
+	"notes": {
+		"mode": "github-generated",
+		"file": null
+	},
+	"artifacts": {
+		"buildCommands": [],
+		"paths": []
+	}
+}

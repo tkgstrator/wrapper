@@ -260,3 +260,6 @@ $RECYCLE.BIN/
 # Local secrets backups
 .env.local*
 .env.*.local
+
+# Claude Code machine-local settings (devflow writes its template here)
+.claude/settings.local.json

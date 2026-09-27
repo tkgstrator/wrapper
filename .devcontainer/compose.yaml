@@ -7,3 +7,6 @@ services:
       - ../:/home/vscode/app:cached
     tty: true
     stdin_open: true
+
+  gamdl:
+    image: ghcr.io/tkgstrator/gamdl:3.8.5-3.14-trixie-slim

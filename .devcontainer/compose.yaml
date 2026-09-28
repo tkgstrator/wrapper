@@ -10,7 +10,7 @@ services:
 
   wrapper:
     # Swap in a local build with WRAPPER_IMAGE=wrapper-v2:latest.
-    image: ${WRAPPER_IMAGE:-ghcr.io/tkgstrator/wrapper:v3.0.0}
+    image: ${WRAPPER_IMAGE:-ghcr.io/tkgstrator/wrapper:v3.0.0.1}
     volumes:
       # Apple session store, shared with the root compose.yaml (git-ignored).
       - ../data:/app/rootfs/data/data/com.apple.android.music/files

@@ -5,7 +5,7 @@
 namespace wrapper {
 
 struct ServerInfo {
-    std::string version = "3.0.0";
+    std::string version = "3.0.1";
     bool apple_init_enabled = true;
 };
 

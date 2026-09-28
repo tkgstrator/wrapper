@@ -8,5 +8,47 @@ services:
     tty: true
     stdin_open: true
 
+  wrapper:
+    # Swap in a local build with WRAPPER_IMAGE=wrapper-v2:latest.
+    image: ${WRAPPER_IMAGE:-ghcr.io/tkgstrator/wrapper:v3.0.0}
+    volumes:
+      # Apple session store, shared with the root compose.yaml (git-ignored).
+      - ../data:/app/rootfs/data/data/com.apple.android.music/files
+    cap_add:
+      - SYS_ADMIN
+      - SYS_CHROOT
+      - SYS_PTRACE
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      # Sign in on startup when the cached Apple session cannot be restored.
+      # Values come from .devcontainer/.env (see .env.example).
+      WRAPPER_USERNAME: ${USERNAME:-}
+      WRAPPER_PASSWORD: ${PASSWORD:-}
+    restart: unless-stopped
+
   gamdl:
-    image: ghcr.io/tkgstrator/gamdl:3.8.5-3.14-trixie-slim
+    image: ghcr.io/tkgstrator/gamdl:3.9.1.1-3.14-trixie-slim
+    depends_on:
+      - wrapper
+    volumes:
+      # Downloads land in .tmp/gamdl/content.
+      - ../.tmp/gamdl:/app
+    # Seed a config that points gamdl at the wrapper sidecar, then idle so
+    # that `docker exec -it <gamdl> gamdl <url>` can drive it.
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /root/.gamdl
+        [ -f /root/.gamdl/config.ini ] || cat > /root/.gamdl/config.ini <<'EOF'
+        [gamdl]
+        use_wrapper = true
+        wrapper_url = http://wrapper
+        wrapper_decrypt_host = wrapper
+        wrapper_decrypt_port = 10020
+        song_codec_priority = alac
+        output_path = /app/content
+        EOF
+        exec sleep infinity
+    restart: unless-stopped

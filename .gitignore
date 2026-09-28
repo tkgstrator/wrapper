@@ -260,3 +260,9 @@ $RECYCLE.BIN/
 # Local secrets backups
 .env.local*
 .env.*.local
+
+# Apple Music session cookies exported for gamdl
+cookies.txt
+
+# Claude Code machine-local settings (devflow writes its template here)
+.claude/settings.local.json

@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
 
   gamdl:
-    image: ghcr.io/tkgstrator/gamdl:3.8.5-3.14-trixie-slim
+    image: ghcr.io/tkgstrator/gamdl:3.9.1.1-3.14-trixie-slim
     depends_on:
       - wrapper
     volumes:

@@ -266,3 +266,6 @@ cookies.txt
 
 # Claude Code machine-local settings (devflow writes its template here)
 .claude/settings.local.json
+
+# Local Codex configuration, credentials, and session state.
+/.codex/

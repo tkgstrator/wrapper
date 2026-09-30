@@ -39,7 +39,7 @@
   "containerEnv": {
     "CLAUDE_CODE_AUTO_MODE_SERVER": "0",
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
-    "CODEX_HOME": "/home/vscode/.codex",
+    "CODEX_HOME": "${containerWorkspaceFolder}/.codex",
     "CODEX_MODEL": "${localEnv:CODEX_MODEL}",
     "ANDROID_NDK_HOME": "/opt/android-ndk-r23b",
     "ANDROID_NDK_ROOT": "/opt/android-ndk-r23b"
